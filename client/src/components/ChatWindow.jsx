@@ -74,6 +74,8 @@ const ChatWindow = ({ senderId, productId }) => {
               text: newMessage,
               productDetails: product,
               context: messages.slice(-5), // Send last 5 messages for context
+              senderId, // Include senderId
+              productId, // Include productId
             }),
           }
         );

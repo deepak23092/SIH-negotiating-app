@@ -1,6 +1,8 @@
 const mongoose = require("mongoose");
 
 const chatbotSchema = new mongoose.Schema({
+  senderId: { type: String },
+  productId: { type: String },
   userMessage: {
     type: String,
     required: true,

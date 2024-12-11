@@ -8,7 +8,10 @@ const openai = new OpenAI({
 
 exports.generateResponse = async (req, res) => {
   try {
-    const { text, productDetails, context } = req.body;
+    const { text, productDetails, context, senderId, productId } = req.body;
+
+    console.log("senderId: ", senderId);
+    console.log("productId: ", productId);
 
     if (!text || typeof text !== "string") {
       return res
@@ -76,9 +79,10 @@ Remember:
 
     // Save conversation to the database
     await ChatBot.create({
+      senderId,
       userMessage: text,
       botResponse,
-      productId: productDetails?.id || null,
+      productId,
       timestamp: new Date(),
     });
 
