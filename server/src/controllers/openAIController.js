@@ -1,68 +1,104 @@
-const { generateObject } = require("ai");
-const { createOpenAI } = require("@ai-sdk/openai");
-const { z } = require("zod");
-const Negotiation = require("../models/Negotiation");
+const OpenAI = require("openai");
+const ChatBot = require("../models/ChatBot");
 
-// Initialize OpenAI
-const openai = createOpenAI({
+// Initialize OpenAI API
+const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-exports.openAiFunc = async (req, res) => {
-  console.log("req.body", req.body);
+exports.generateResponse = async (req, res) => {
   try {
-    const userInput = req.body.text;
-    console.log("userInput", userInput);
+    const { text, productDetails, context } = req.body;
 
-    if (!userInput) {
+    if (!text || typeof text !== "string") {
       return res
         .status(400)
-        .json({ error: "Text field is required in the request body." });
+        .json({ error: "Message text is required and must be a string." });
     }
 
-    // Use OpenAI to extract product name and price
-    const result = await generateObject({
-      model: openai("gpt-4o-mini-2024-07-18"),
-      schema: z.object({
-        productName: z.string().optional(),
-        price: z.number().optional(),
-      }),
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are an assistant. Extract the product name (e.g., crop, fruit, or vegetable) and price from the user's message. If the message is invalid, leave the fields empty.",
-        },
-        {
-          role: "user",
-          content: userInput,
-        },
-      ],
+    // Prepare the conversation context
+    const conversationHistory = (context || []).map((msg) => ({
+      role: msg.senderId === "system" ? "assistant" : "user",
+      content: msg.content,
+    }));
+
+    // Create system message with product context
+    const systemMessage = {
+      role: "system",
+      content: `You are a helpful AI shopping assistant. You help customers with their shopping queries.
+      
+Current product details:
+- Name: ${productDetails?.name || "N/A"}
+- Price: ₹${
+        productDetails?.price
+          ? (productDetails.price / productDetails.quantity).toFixed(2)
+          : "N/A"
+      } per ${productDetails?.unit || "unit"}
+- Available Quantity: ${productDetails?.quantity || "N/A"} ${
+        productDetails?.quantityName || ""
+      }
+
+Your tasks:
+1. Answer questions about the product.
+2. Help with price negotiations (be firm but polite).
+3. Explain delivery options and payment methods.
+4. Provide relevant suggestions.
+5. Keep responses concise and friendly.
+
+Remember:
+- Stay professional and helpful.
+- Don't make up information.
+- If unsure, ask for clarification.
+- Use emojis occasionally to be friendly.
+- Keep responses under 150 words.`,
+    };
+
+    // Prepare the complete message array
+    const messages = [
+      systemMessage,
+      ...conversationHistory,
+      { role: "user", content: text },
+    ];
+
+    // Get response from OpenAI
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages,
+      max_tokens: 200,
+      temperature: 0.7,
+      presence_penalty: 0.6,
+      frequency_penalty: 0.3,
     });
 
-    const { productName, price } = result.object;
+    const botResponse =
+      completion.choices[0]?.message?.content ||
+      "I'm sorry, I couldn't generate a response.";
 
-    // Validate the extracted data
-    if (!productName || !price) {
-      return res.status(200).json({
-        message: "You are not eligible for negotiating.",
+    // Save conversation to the database
+    await ChatBot.create({
+      userMessage: text,
+      botResponse,
+      productId: productDetails?.id || null,
+      timestamp: new Date(),
+    });
+
+    return res.status(200).json({ message: botResponse });
+  } catch (error) {
+    console.error("Error generating response:", error);
+
+    // Handle rate limit error
+    if (error.status === 429) {
+      return res.status(429).json({
+        error: "Too many requests. Please try again later.",
+        message:
+          "I'm currently handling too many requests. Please try again in a moment. 🙏",
       });
     }
 
-    // Store the valid negotiation in the database
-    const negotiation = new Negotiation({
-      productName,
-      price,
-      message: userInput,
+    return res.status(500).json({
+      error: "Failed to generate response",
+      message:
+        "I apologize, but I'm having trouble processing your request. Could you please try again? 🤔",
     });
-    await negotiation.save();
-
-    return res.status(200).json({
-      message: "Your negotiation has been recorded.",
-      negotiation: { productName, price },
-    });
-  } catch (error) {
-    console.error("Error processing negotiation:", error);
-    res.status(500).json({ error: "Internal server error." });
   }
 };

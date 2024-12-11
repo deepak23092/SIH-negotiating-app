@@ -1,8 +1,8 @@
 const express = require("express");
-const { openAiFunc } = require("../controllers/openAIController");
+const { generateResponse } = require("../controllers/openAIController");
 
 const router = express.Router();
 
-router.post("/generate-action", openAiFunc);
+router.post("/generate-action", generateResponse);
 
 module.exports = router;
