@@ -10,9 +10,6 @@ exports.generateResponse = async (req, res) => {
   try {
     const { text, productDetails, context, senderId, productId } = req.body;
 
-    console.log("senderId: ", senderId);
-    console.log("productId: ", productId);
-
     if (!text || typeof text !== "string") {
       return res
         .status(400)
