@@ -6,7 +6,6 @@ import {
 } from "react-router-dom";
 import { useState, useEffect } from "react";
 import ChatWindow from "./components/ChatWindow";
-import { ChatProvider } from "./context/ChatContext";
 import React from "react";
 
 // NegotiationPage Component
@@ -39,11 +38,7 @@ const App = () => {
         {/* Negotiation route */}
         <Route
           path="/chatbot/:senderId/:productId"
-          element={
-            <ChatProvider>
-              <NegotiationPage />
-            </ChatProvider>
-          }
+          element={<NegotiationPage />}
         />
       </Routes>
     </Router>

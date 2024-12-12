@@ -1,6 +1,5 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
-import { ChatContext } from "../context/ChatContext";
 import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { FiArrowLeft, FiMic, FiLoader } from "react-icons/fi";
@@ -8,17 +7,17 @@ import { app } from "../firebase";
 
 const ChatWindow = ({ senderId, productId }) => {
   const firestore = getFirestore(app);
-  const { messages, setMessages } = useContext(ChatContext);
+  const [messages, setMessages] = useState([]);
   const [product, setProduct] = useState(null);
   const [newMessage, setNewMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
 
-  const [isRecording, setIsRecording] = useState(false); // For recording state
-  const [loadingTranscription, setLoadingTranscription] = useState(false); // For transcription state
-  const mediaRecorderRef = useRef(null); // For media recorder
-  const audioChunksRef = useRef([]); // For storing audio chunks
+  const [isRecording, setIsRecording] = useState(false);
+  const [loadingTranscription, setLoadingTranscription] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
 
   useEffect(() => {
     const fetchData = async () => {
