@@ -45,7 +45,7 @@ const ChatWindow = ({ senderId }) => {
 
       try {
         const response = await fetch(
-          "http://localhost:5000/api/openai/generate-action",
+          "https://sih-negotiating-app-1.onrender.com/api/openai/generate-action",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
