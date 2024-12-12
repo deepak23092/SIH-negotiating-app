@@ -1,14 +1,10 @@
-import React, { useContext, useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { format } from "date-fns";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { FiArrowLeft, FiMic, FiLoader } from "react-icons/fi";
-import { app } from "../firebase";
 
-const ChatWindow = ({ senderId, productId }) => {
-  const firestore = getFirestore(app);
+const ChatWindow = ({ senderId }) => {
   const [messages, setMessages] = useState([]);
-  const [product, setProduct] = useState(null);
   const [newMessage, setNewMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
@@ -20,35 +16,15 @@ const ChatWindow = ({ senderId, productId }) => {
   const audioChunksRef = useRef([]);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        if (productId) {
-          const productRef = doc(firestore, "products", productId);
-          const productSnap = await getDoc(productRef);
-          const productData = productSnap.exists() ? productSnap.data() : null;
-          setProduct(productData);
-
-          // Welcome message
-          const welcomeMessage = {
-            senderId: "system",
-            receiverId: senderId,
-            productId,
-            content: `👋 Hello! I'm your AI shopping assistant. I can help you with:
-            \n• Product information
-            \n• Price negotiations
-            \n• Delivery details
-            \n• Payment options
-            \nWhat would you like to know about ${productData?.name}?`,
-            timestamp: new Date().toISOString(),
-          };
-          setMessages([welcomeMessage]);
-        }
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
+    // Initialize with a welcome message
+    const welcomeMessage = {
+      senderId: "system",
+      receiverId: senderId,
+      content: "Hi there! I am your AI assistant. How can I help you today?",
+      timestamp: new Date().toISOString(),
     };
-    fetchData();
-  }, [productId]);
+    setMessages([welcomeMessage]);
+  }, [senderId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -59,7 +35,6 @@ const ChatWindow = ({ senderId, productId }) => {
       const userMessage = {
         senderId,
         receiverId: "system",
-        productId,
         content: newMessage,
         timestamp: new Date().toISOString(),
       };
@@ -70,16 +45,14 @@ const ChatWindow = ({ senderId, productId }) => {
 
       try {
         const response = await fetch(
-          "https://sih-negotiating-app.onrender.com/api/openai/generate-action",
+          "http://localhost:5000/api/openai/generate-action",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               text: newMessage,
-              productDetails: product,
-              context: messages.slice(-5), // Send last 5 messages for context
-              senderId, // Include senderId
-              productId, // Include productId
+              context: messages.slice(-5),
+              senderId,
             }),
           }
         );
@@ -90,7 +63,6 @@ const ChatWindow = ({ senderId, productId }) => {
           const botReply = {
             senderId: "system",
             receiverId: senderId,
-            productId,
             content: data.message,
             timestamp: new Date().toISOString(),
           };
@@ -188,25 +160,12 @@ const ChatWindow = ({ senderId, productId }) => {
           <FiArrowLeft size={20} />
         </button>
         <div>
-          <h2 className="text-lg">AI Shopping Assistant</h2>
+          <h2 className="text-lg">AI Assistant</h2>
           {isTyping && (
             <p className="text-sm text-gray-500">Bot is typing...</p>
           )}
         </div>
       </div>
-
-      {/* Product Details */}
-      {product && (
-        <div className="p-4 bg-white shadow-sm border-b">
-          <h3 className="font-bold text-lg">{product.name}</h3>
-          <p className="text-gray-600">
-            Price: ₹{(product.price / product.quantity) * 100} per 100kg
-          </p>
-          <p className="text-gray-600">
-            Available: {product.quantity} {product.quantityName}
-          </p>
-        </div>
-      )}
 
       {/* Messages */}
       <div className="flex-grow overflow-y-auto p-4">

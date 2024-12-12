@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const BASE_URL = "https://sih-negotiating-app.onrender.com/api";
+const BASE_URL = "http://localhost:5000/api";
 
 export const getUserList = async (userId) =>
   axios.get(`${BASE_URL}/conversation/chats/${userId}`);

@@ -10,7 +10,7 @@ import React from "react";
 
 // NegotiationPage Component
 const NegotiationPage = () => {
-  const { senderId, productId } = useParams();
+  const { senderId } = useParams();
 
   // Detect mobile view
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
@@ -25,7 +25,7 @@ const NegotiationPage = () => {
   return (
     <div className="flex justify-center items-center">
       {/* Single ChatWindow for negotiation */}
-      <ChatWindow senderId={senderId} productId={productId} />
+      <ChatWindow senderId={senderId} />
     </div>
   );
 };
@@ -36,10 +36,7 @@ const App = () => {
     <Router>
       <Routes>
         {/* Negotiation route */}
-        <Route
-          path="/chatbot/:senderId/:productId"
-          element={<NegotiationPage />}
-        />
+        <Route path="/chatbot/:senderId" element={<NegotiationPage />} />
       </Routes>
     </Router>
   );

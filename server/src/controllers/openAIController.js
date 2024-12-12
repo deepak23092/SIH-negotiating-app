@@ -8,7 +8,7 @@ const openai = new OpenAI({
 
 exports.generateResponse = async (req, res) => {
   try {
-    const { text, productDetails, context, senderId, productId } = req.body;
+    const { text, context, senderId } = req.body;
 
     if (!text || typeof text !== "string") {
       return res
@@ -22,35 +22,22 @@ exports.generateResponse = async (req, res) => {
       content: msg.content,
     }));
 
-    // Create system message with product context
+    // Create system message for generalized chat assistant
     const systemMessage = {
       role: "system",
-      content: `You are a helpful AI shopping assistant. You help customers with their shopping queries.
-      
-Current product details:
-- Name: ${productDetails?.name || "N/A"}
-- Price: ₹${
-        productDetails?.price
-          ? (productDetails.price / productDetails.quantity).toFixed(2)
-          : "N/A"
-      } per ${productDetails?.unit || "unit"}
-- Available Quantity: ${productDetails?.quantity || "N/A"} ${
-        productDetails?.quantityName || ""
-      }
+      content: `You are a helpful and knowledgeable AI assistant. You can:
 
-Your tasks:
-1. Answer questions about the product.
-2. Help with price negotiations (be firm but polite).
-3. Explain delivery options and payment methods.
-4. Provide relevant suggestions.
-5. Keep responses concise and friendly.
+1. Answer questions on a variety of topics (science, technology, arts, etc.).
+2. Provide explanations, examples, and suggestions when asked.
+3. Assist with problem-solving and brainstorming.
+4. Engage in casual and friendly conversations.
 
-Remember:
-- Stay professional and helpful.
-- Don't make up information.
-- If unsure, ask for clarification.
-- Use emojis occasionally to be friendly.
-- Keep responses under 150 words.`,
+Guidelines:
+- Stay professional, friendly, and concise.
+- Avoid making up information. If unsure, acknowledge it honestly.
+- Use emojis sparingly to make responses engaging.
+- Keep responses under 150 words unless specifically asked to elaborate.
+- Be adaptable to user tone and context.`,
     };
 
     // Prepare the complete message array
@@ -79,7 +66,6 @@ Remember:
       senderId,
       userMessage: text,
       botResponse,
-      productId,
       timestamp: new Date(),
     });
 
